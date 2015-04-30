@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Connections>
+  <!--BankCode:銀行代碼 MessageType:電文發送的種類 127.0.0.1:IP 999:Port 10000:送出逾時 ASCII:編碼格式 6000:重新連線間隔時間(ms) 180000:送出的EchoRequest間隔時間(ms)-->
+  <!--<Connection BankCode="0808" MessageType="0100+0420">60.199.64.90:9310:6000:ASCII:6000:180000</Connection>-->
+  <Connection BankCode="0808" MessageType="0120">60.199.64.90:9311:6000:ASCII:6000:180000</Connection>
+  <!--<Connection BankCode="0808" MessageType="0302">60.199.64.90:9312:6000:ASCII:6000:180000</Connection>-->
+  <!--<Connection BankCode="0808" MessageType="0100+0420">127.0.0.1:9310:5000:ASCII:6000:1800000</Connection>-->
+  <!--<Connection BankCode="0808" MessageType="0120">127.0.0.1:9311:5000:ASCII:6000:180000</Connection>
+  <Connection BankCode="0808" MessageType="0302">127.0.0.1:9312:5000:ASCII:6000:180000</Connection>-->
+</Connections>
