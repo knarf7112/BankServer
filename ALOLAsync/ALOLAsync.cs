@@ -227,8 +227,11 @@ namespace ALOLAsync
         #endregion
 
         #region Property
+
         public Encoding Encode { get; set; }
 
+        private StringBuilder ReceiveStringQueue { get; set; }
+ 
         private System.Timers.Timer timer { get; set; }
 
         /// <summary>
@@ -272,6 +275,7 @@ namespace ALOLAsync
             this.BankCode = bankCode;//
             this.MessageType = messageType;
             this.Encode = encoding;
+            this.ReceiveStringQueue = new StringBuilder();
             this.asyncConnect = new AsyncConnect(ip, port, sendTimeout);
             //init timer
             //啟動連線的太碼
@@ -432,6 +436,9 @@ namespace ALOLAsync
             //關閉Socket Component並釋放資源
             this.asyncConnect.Stop();
 
+            //clean StringBuilder
+            this.ReceiveStringQueue.Clear();
+            
             //clean dictionary
             this.dicMsghandles.Clear();
             this.dicReqToRspMsgType.Clear();
@@ -725,11 +732,6 @@ namespace ALOLAsync
                     {
                         string receiveString = this.Encode.GetString(receiveState.ReceiveBuffer, 0, receiveLength);
                         log.Debug("收到的總資料長度:" + receiveLength + " 內容:" + receiveString);
-                        if (receiveString.Length < 13)
-                        {
-                            log.Debug("接收資料長度不符:" + receiveString.Length);
-                            return;
-                        }
                         //----------------------------------------------------------------------------
                         // 測試用
                         //若接收到資料的Key與字典檔內的Key相符,表示為此字典檔內某個msgHandle所需的接收資料
@@ -738,31 +740,42 @@ namespace ALOLAsync
                         //{
                         //    this.dicMsghandles[comparekey].ReceiveString = receiveString;
                         //}
-                        //----------------------------------------------------------------------------
-                        int count = 1;
+                        //----------------------2015-05-04後測試的版本------------------------------------
+                        //改用StringBiulder方式處理串接的字串
+                        //將接收到的字串插入StringBuilder
+                        ReceiveStringQueue.Append(receiveString);
+                        //迴圈處理StringBuilder字串
+                        HandleRecieveString(ReceiveStringQueue);
+                        //-----------------------2015-05-04前的版本-----------------------------------------
+                        //if (receiveString.Length < 13)
+                        //{
+                        //    log.Debug("接收資料長度不符:" + receiveString.Length);
+                        //    return;
+                        //}
+                        //int count = 1;
                         //若一次來多段電文,依頭3碼分段處理電文
-                        for (int i = 0; i < (receiveString.Length - 1); )
-                        {
-                            //切頭3碼轉數字
-                            int stringLength = Convert.ToInt32(receiveString.Substring(i, 3)) + 3;
-                            //依長度取資料字串
-                            string msgString = (receiveString.Length - i >= stringLength) ? receiveString.Substring(i, stringLength) : receiveString.Substring(i, (receiveString.Length - i));// + 3, stringLength) : receiveString.Substring((i + 3), (receiveString.Length - (i + 3)));
-                            //i += 3;
-                            log.Debug("第" + count + "段電文:" + " Length:" + stringLength + " \nMsgData:" + msgString);
-                            if (stringLength == msgString.Length)
-                            {
-                                string messageType = msgString.Substring((8 + 3), 4);//3碼:字串長度 + 找Message Type當parse依據
-                                TryParseMsg(messageType, msgString);
-                                i += msgString.Length;
-                                count++;
-                            }
-                            else
-                            {
-                                log.Error("長度異常: 定義長度=>" + stringLength + "  實際長度=>" + msgString.Length + "  實際=>" + msgString);
-                                //後面都不比對了(應該也沒了)
-                                break;
-                            }
-                        }
+                        //for (int i = 0; i < (receiveString.Length - 1); )
+                        //{
+                        //    //切頭3碼轉數字
+                        //    int stringLength = Convert.ToInt32(receiveString.Substring(i, 3)) + 3;
+                        //    //依長度取資料字串
+                        //    string msgString = (receiveString.Length - i >= stringLength) ? receiveString.Substring(i, stringLength) : receiveString.Substring(i, (receiveString.Length - i));// + 3, stringLength) : receiveString.Substring((i + 3), (receiveString.Length - (i + 3)));
+                        //    //i += 3;
+                        //    log.Debug("第" + count + "段電文:" + " Length:" + stringLength + " \nMsgData:" + msgString);
+                        //    if (stringLength == msgString.Length)
+                        //    {
+                        //        string messageType = msgString.Substring((8 + 3), 4);//3碼:字串長度 + 找Message Type當parse依據
+                        //        TryParseMsg(messageType, msgString);
+                        //        i += msgString.Length;
+                        //        count++;
+                        //    }
+                        //    else
+                        //    {
+                        //        log.Error("長度異常: 定義長度=>" + stringLength + "  實際長度=>" + msgString.Length + "  實際=>" + msgString);
+                        //        //後面都不比對了(應該也沒了)
+                        //        break;
+                        //    }
+                        //}
                         //----------------old-2015-04-21--------------------
                         //string messageType = receiveString.Substring(8, 4);//找Message Type當parse依據
                         //TryParseMsg(messageType, receiveString);
@@ -799,6 +812,39 @@ namespace ALOLAsync
             {
                 this.asyncConnect.ReceiveDone.Set();
             }
+        }
+
+        /// <summary>
+        /// 截取接收到的字串作處理
+        /// </summary>
+        /// <param name="ReceiveStringQueue">接收到的字串</param>
+        private void HandleRecieveString(StringBuilder ReceiveStringQueue)
+        {
+            int count = 1;
+            int stringLength = 0;
+            bool dataDeficiency = false;
+            do
+            {
+                //切頭3碼
+                string definedLength = ReceiveStringQueue.ToString(0, 3);
+                //轉字串長度
+                stringLength = Convert.ToInt32(definedLength) + definedLength.Length;
+                if (stringLength > ReceiveStringQueue.Length)
+                {
+                    log.Debug(@"目前定義長度:" + stringLength + " < 現有字串長度:" + ReceiveStringQueue.Length);
+                    dataDeficiency = true;
+                    continue;
+                }
+                //依長度取資料字串
+                string msgString = ReceiveStringQueue.ToString(0, stringLength);
+                //移除
+                ReceiveStringQueue.Remove(0, stringLength);
+                log.Debug("第" + count + "段電文:" + " Length:" + stringLength + " \nMsgData:" + msgString);
+                string messageType = msgString.Substring((8 + 3), 4);//3碼:字串長度 + 找Message Type當parse依據
+                TryParseMsg(messageType, msgString);
+                count++;
+            }
+            while (!dataDeficiency);
         }
 
         //暫不用分類

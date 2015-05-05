@@ -8,6 +8,8 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Xml;
+using System.Xml.XPath;
+using System.Xml.Linq;
 
 namespace ALOLAsync
 {
@@ -17,13 +19,16 @@ namespace ALOLAsync
     public class SimpleServer : IDisposable
     {
         private static readonly ILog log = LogManager.GetLogger(typeof(SimpleServer));
-        //public ALOLAsync ALOLComponent { get; set; }
 
-        //public ALOLAsync ALOLComponent2 { get; set; }
+        /// <summary>
+        /// 集合存放所有對銀行連結的元件
+        /// </summary>
+        public IDictionary<string,ALOLAsync> DicALOL { get; set; }
 
-        //public ALOLAsync ALOLComponent3 { get; set; }
-
-        public IDictionary<string,ALOLAsync> AlolList { get; set; }
+        /// <summary>
+        /// 負責接收AP來的socket並取得自動加值(或沖正)請求轉成電文與銀行端交訊
+        /// </summary>
+        private ALOLAsync SendALOL { get; set; }
 
         public Socket mainSocket { get; set; }
 
@@ -31,18 +36,21 @@ namespace ALOLAsync
 
         public int ReceiveTimeout { get; set; }
 
+        public string ConnectionsId { get; set; }
+
         public ManualResetEvent connectDone = new ManualResetEvent(false);
 
         public readonly int port;
         public int MaxAccept { get; set; }
         public bool keepService { get; set; }
-        public SimpleServer(int port, int maxAccept, int sendTimeout = 0, int receiveTimeout = 0)
+        public SimpleServer(int port, int maxAccept,string id, int sendTimeout = 0, int receiveTimeout = 0)
         {
             this.port = port;
             this.MaxAccept = maxAccept;
+            this.ConnectionsId = id;
             this.SendTimeout = sendTimeout;
             this.ReceiveTimeout = receiveTimeout;
-            this.AlolList = new Dictionary<string, ALOLAsync>();
+            this.DicALOL = new Dictionary<string, ALOLAsync>();
             //銀行連接者物件 "000":BankCode  "10.27.68.161":BankIP  58002:BankPort
             //this.ALOLComponent = new ALOLAsync("000", "10.27.68.161", 58002, 10000, Encoding.ASCII);
             //玉山
@@ -54,7 +62,7 @@ namespace ALOLAsync
         /// <summary>
         /// Async Accept
         /// </summary>
-        public void Start2()
+        public void Start()
         {
             try
             {
@@ -62,7 +70,7 @@ namespace ALOLAsync
                 this.keepService = true;
 
                 //開始載入Xml連線元件設定
-                this.LoadALOLAsyncConfig();
+                this.LoadBankConnectionConfig(this.ConnectionsId);
                 //開始連線銀行端
                 this.StartConnections();
                 
@@ -82,38 +90,11 @@ namespace ALOLAsync
                     connectDone.Reset();
                     this.mainSocket.BeginAccept(ConnectCakllback, this.mainSocket);
                     connectDone.WaitOne();
-                        //try
-                        //{
-                        //    log.Debug("Client from " + this.mainSocket.RemoteEndPoint.ToString());
-                            
-                            //if (!this.AlolList.ContainsKey("08080100+0420"))
-                            //{
-                            //    throw new Exception("送0100+0420電文用的Connection不存在");
-                            //}
-                            //string key = this.AlolList["08080100+0420"].Send(client);
-                            ////string key = this.ALOLComponent.Send(client);
-                            ////string key = this.ALOLComponent.Send("Qoo1", "Task..........................1", true);
 
-                            //int timeStop = 0;
-                            //while (this.mainSocket.ReceiveTimeout >= timeStop)
-                            //{
-                            //    log.Debug("ReceiveTimeout:" + this.mainSocket.ReceiveTimeout + "  timeStop:" + timeStop);
-                            //    if (this.AlolList["08080100+0420"].IsSuccess(key))
-                            //        break;
-                            //    Thread.Sleep(1000);
-                            //    timeStop += 1000;
-                            //}
-                            //log.Debug("此client結束");
-                            //this.AlolList["08080100+0420"].RevomeKey(key);
-                        //}
-                        //catch (Exception ex)
-                        //{
-                        //    log.Error("Ex:" + ex.StackTrace);
-                        //}
-                    
-                    log.Debug("結束上個client後,開始一個新的等待");
+                    log.Debug("continue a new BeginAccept");
                 }
                 while (this.keepService);
+                log.Debug("End Start()...");
             }
             catch (Exception ex)
             {
@@ -131,27 +112,27 @@ namespace ALOLAsync
                     using (Socket client = mainSck.EndAccept(ar))
                     {
                         connectDone.Set();
-                        if (!this.AlolList.ContainsKey("08080120"))
+                        if (this.SendALOL == null)
                         {
-                            throw new Exception("送08080120電文用的Connection不存在");
+                            throw new Exception("送電文用的Connection不存在");
                         }
-                        string key = this.AlolList["08080120"].Send(client);
-                        //string key = this.ALOLComponent.Send(client);
-                        //string key = this.AlolList["08080100+0420"].Send("Qoo1", "Task2..........................1", true);
+                        // AP(Client)   ==socket==>> (Server)this(Client)   ==socket==>> (Server)Bank
+                        //            <<==socket==                        <<==socket==
+                        string key = this.SendALOL.Send(client);
 
-                        int timeStop = 0;
-                        while (this.mainSocket.ReceiveTimeout >= timeStop)
+                        int timeSpend = 0;
+                        while (this.mainSocket.ReceiveTimeout >= timeSpend)
                         {
-                            log.Debug("ReceiveTimeout:" + this.mainSocket.ReceiveTimeout + "  timeStop:" + timeStop);
-                            if (this.AlolList["08080120"].IsSuccess(key))
+                            log.Debug("ReceiveTimeout(ms):" + this.mainSocket.ReceiveTimeout + "  TimeSpend(ms):" + timeSpend);
+                            if (this.SendALOL.IsSuccess(key))
                             {
                                 break;
                             }
                             Thread.Sleep(500);
-                            timeStop += 500;
+                            timeSpend += 500;
                         }
                         log.Debug("此client結束");
-                        this.AlolList["08080120"].RevomeKey(key);
+                        this.SendALOL.RevomeKey(key);
                     }
                 }
             }
@@ -161,10 +142,11 @@ namespace ALOLAsync
             }
         }
 
+        #region Start Method(old Version)
         /// <summary>
-        /// Sync Accept
+        /// (Old Version)Sync Accept
         /// </summary>
-        public void Start()
+        public void Start2()
         {
             try
             {
@@ -172,12 +154,9 @@ namespace ALOLAsync
                 this.keepService = true;
 
                 //開始載入Xml連線元件設定
-                this.LoadALOLAsyncConfig();
+                this.LoadBankConnectionConfig(this.ConnectionsId);
                 //開始連線銀行端
                 this.StartConnections();
-                //this.ALOLComponent.Start();
-                //this.ALOLComponent2.Start();
-                //this.ALOLComponent3.Start();
                 
                 this.mainSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)
                 {
@@ -199,25 +178,23 @@ namespace ALOLAsync
                         {
                             log.Debug("Client from " + client.RemoteEndPoint.ToString());
 
-                            if (!this.AlolList.ContainsKey("08080100+0420"))
+                            if (this.SendALOL == null)
                             {
-                                throw new Exception("Key:08080100+0420");
+                                throw new Exception("Key:Send Connection not exist");
                             }
-                            string key = this.AlolList["08080100+0420"].Send(client);
-                            //string key = this.ALOLComponent.Send(client);
-                            //string key = this.ALOLComponent.Send("Qoo1", "Task..........................1", true);
+                            string key = this.SendALOL.Send(client);
 
                             int timeStop = 0;
                             while (this.mainSocket.ReceiveTimeout >= timeStop)
                             {
-                                log.Debug("ReceiveTimeout:" + this.mainSocket.ReceiveTimeout + "  timeStop:" + timeStop);
-                                if (this.AlolList["08080100+0420"].IsSuccess(key))
+                                log.Debug("ReceiveTimeout(ms):" + this.mainSocket.ReceiveTimeout + "  TimeSpend(ms):" + timeStop);
+                                if (this.SendALOL.IsSuccess(key))
                                     break;
                                 Thread.Sleep(1000);
                                 timeStop += 1000;
                             }
                             log.Debug("此client結束");
-                            this.AlolList["08080100+0420"].RevomeKey(key);
+                            this.SendALOL.RevomeKey(key);
                         }
                         catch (Exception ex)
                         {
@@ -234,29 +211,34 @@ namespace ALOLAsync
             }
         }
         /// <summary>
-        /// 從Xml資源檔載入設定元件資料
+        /// (Old Version)從Xml資源檔載入設定元件資料
         /// </summary>
-        public void LoadALOLAsyncConfig()
+        public void LoadALOLAsyncConfig(string xmlTagName)
         {
-            if (this.AlolList.Count == 0)
+            if (this.DicALOL.Count == 0)
             {
+                log.Debug("開始讀取Xml設定檔");
                 string path = AppDomain.CurrentDomain.BaseDirectory;
-                log.Debug("Path:" + path);
                 XmlDocument xml = new XmlDocument();
+                
                 try
                 {
-                    xml.Load(path + "Config\\BankConfig.xml");
-                    XmlNodeList nodes = xml.GetElementsByTagName("Connection");
+                    string fullPath = path + "Config\\BankConfig.xml";
+                    log.Debug("Full Path:" + fullPath);
+                    xml.Load(fullPath);
+                    XmlNodeList nodes = xml.GetElementsByTagName(xmlTagName);
                     foreach (XmlNode node in nodes)
                     {
+                        XmlElement xElement = node as XmlElement;
                         XmlAttributeCollection attrCollection = node.Attributes;
                         //Attributes
                         string bankCode = attrCollection.GetNamedItem("BankCode").Value;
                         string messageType = attrCollection.GetNamedItem("MessageType").Value;
-
-                        if (this.AlolList.ContainsKey((bankCode + messageType)))
+                        string sendSocket = attrCollection.GetNamedItem("SendSocket").Value;
+                        xElement.HasAttribute("SendSocket");
+                        if (this.DicALOL.ContainsKey(messageType))
                         {
-                            log.Error("此Key:" + (bankCode + messageType) + "已存在於字典檔");
+                            log.Error("此Key:" + messageType + "已存在於字典檔");
                             continue;
                         }
                         //var s2 = node.Attributes.Item(1).Value;
@@ -272,7 +254,66 @@ namespace ALOLAsync
                         log.Debug("IP:" + ip + " port:" + port + " sendTimeout:" + sendTimeout + " Encode:" + Config[3] + " connectTimeout:" + connectTimeout + " echoTimeout:" + echoTimeout);
                         ALOLAsync ALOLComponent = new ALOLAsync(bankCode, messageType, ip, port, sendTimeout, encode, connectTimeout, echoTimeout);
                         //add 
-                        this.AlolList.Add((bankCode + messageType), ALOLComponent);
+                        //this.AlolList.Add((bankCode + messageType), ALOLComponent);
+                        log.Debug("AlolList字典集合加入一組連線元件 => key:" + messageType);
+                        this.DicALOL.Add(messageType, ALOLComponent);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    log.Error("讀取XML異常:" + ex.ToString());
+                }
+            }
+        }
+        #endregion
+
+        /// <summary>
+        /// 從\Config\BankConfig.xml載入連線銀行元件設定資料
+        /// </summary>
+        /// <param name="id">群組的id</param>
+        public void LoadBankConnectionConfig(string id)
+        {
+            if (this.DicALOL.Count == 0)
+            {
+                log.Debug("開始讀取Xml設定檔");
+                string path = AppDomain.CurrentDomain.BaseDirectory;
+
+                try
+                {
+                    string fullPath = path + "Config\\BankConfig.xml";
+                    log.Debug("Full Path:" + fullPath);
+                    XElement xRoot = XElement.Load(fullPath);//load all elements
+                    //Enumerable all XElement by the condition
+                    IEnumerable<XElement> xElements = xRoot.XPathSelectElements("//Connections[@id='" + id + "']//Connection");
+                    foreach (XElement xe in xElements)
+                    {
+                        string bankCode = xe.Attribute("BankCode") != null ? xe.Attribute("BankCode").Value : "None";
+                        string messageType = xe.Attribute("MessageType") != null ? xe.Attribute("MessageType").Value : "None";
+                        bool isSendALOL = (xe.Attribute("SendSocket") != null && xe.Attribute("SendSocket").Value.ToUpper() == "YES") ? true : false;
+                        string[] Config = xe.Value.Split(':');//取得設定資料127.0.0.1:999:10000:ASCII:6000:180000
+                        if (Config.Length != 6)
+                        {
+                            log.Error("BankCode:" + bankCode + "的Xml設定檔未滿6項");
+                            continue;
+                        }
+                        string ip = Config[0];
+                        int port = Convert.ToInt32(Config[1]);
+                        int sendTimeout = Convert.ToInt32(Config[2]);
+                        Encoding encode = GetEncoding(Config[3]);
+                        int connectTimeout = Convert.ToInt32(Config[4]);
+                        int echoTimeout = Convert.ToInt32(Config[5]);
+                        log.Debug("BankCode:" + bankCode + " MessageType:" + messageType + " IP:" + ip + " port:" + port + " sendTimeout:" + sendTimeout + " Encode:" + Config[3] + " connectTimeout:" + connectTimeout + " echoTimeout:" + echoTimeout);
+                        ALOLAsync aLOLComponent = new ALOLAsync(bankCode, messageType, ip, port, sendTimeout, encode, connectTimeout, echoTimeout);
+
+                        log.Debug("DicALOL(Count:" + this.DicALOL.Count +")字典集合加入一組連線元件 => key:" + (bankCode + messageType));
+                        if (isSendALOL)
+                        {
+                            // AP(Client)   ==socket==>> (Server)this(Client)   ==socket==>> (Server)Bank
+                            //            <<==socket==                        <<==socket==
+                            this.SendALOL = aLOLComponent;
+                        }
+                        //add
+                        this.DicALOL.Add((bankCode + messageType), aLOLComponent);
                     }
                 }
                 catch (Exception ex)
@@ -287,11 +328,11 @@ namespace ALOLAsync
         /// </summary>
         public void StartConnections()
         {
-            if (this.AlolList.Count == 0)
+            if (this.DicALOL.Count == 0)
             {
                 throw new Exception("字典檔內無連線元件");
             }
-            foreach (ALOLAsync bankType in this.AlolList.Values)
+            foreach (ALOLAsync bankType in this.DicALOL.Values)
             {
                 bankType.Start();
             }
@@ -337,11 +378,12 @@ namespace ALOLAsync
                     this.mainSocket.Close();
                 }
                 //釋放元件資源
-                foreach (ALOLAsync bankType in this.AlolList.Values)
+                this.SendALOL = null;
+                foreach (ALOLAsync bankType in this.DicALOL.Values)
                 {
                     bankType.Stop();
                 }
-                this.AlolList.Clear();
+                this.DicALOL.Clear();
                 //this.ALOLComponent.Stop();
                 //this.ALOLComponent2.Stop();
                 //this.ALOLComponent3.Stop();
