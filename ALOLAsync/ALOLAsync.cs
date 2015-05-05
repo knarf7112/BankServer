@@ -743,9 +743,12 @@ namespace ALOLAsync
                         //----------------------2015-05-04後測試的版本------------------------------------
                         //改用StringBiulder方式處理串接的字串
                         //將接收到的字串插入StringBuilder
+                        log.Debug("插入接收字串前的資料:" + ReceiveStringQueue.ToString());
                         ReceiveStringQueue.Append(receiveString);
+                        log.Debug("插入接收字串後的資料:" + ReceiveStringQueue.ToString());
                         //迴圈處理StringBuilder字串
                         HandleRecieveString(ReceiveStringQueue);
+                        log.Debug("[ReceiveCallback]處理後的字串:" + ReceiveStringQueue.ToString());
                         //-----------------------2015-05-04前的版本-----------------------------------------
                         //if (receiveString.Length < 13)
                         //{
@@ -789,12 +792,12 @@ namespace ALOLAsync
             }
             catch (SocketException sckEx)
             {
-                log.Debug("[ALOLAsync][ReceiveCallback]SocketException:" + sckEx.ToString());
+                log.Error("[ALOLAsync][ReceiveCallback]SocketException:" + sckEx.ToString());
                 //若若被對方斷線則重新啟動
                 //if (sckEx.SocketErrorCode == SocketError.ConnectionRefused)
                 //{
                     //this.WaitStartdone.Reset();
-                    log.Debug("對方可能斷線... 所以開始重新連線 ...");
+                    log.Error("對方可能斷線... 所以開始重新連線 ...");
                     this.Start();
                     //this.WaitStartdone.WaitOne();
                 //}
@@ -802,11 +805,11 @@ namespace ALOLAsync
             catch (ObjectDisposedException objEx)
             {
                 //Socket物件若被dispose,會有一個最後的Async receive會因被強制停止而產生excpetion
-                log.Debug("[ReceiveCallback]ObjectDisposedException:" + objEx.ToString());
+                log.Error("[ReceiveCallback]ObjectDisposedException:" + objEx.ToString());
             }
             catch (Exception ex)
             {
-                log.Debug("[ALOLAsync][ReceiveCallback]" + ex.ToString());
+                log.Error("[ALOLAsync][ReceiveCallback]" + ex.ToString());
             }
             finally
             {
@@ -822,18 +825,18 @@ namespace ALOLAsync
         {
             int count = 1;
             int stringLength = 0;
-            bool dataDeficiency = false;
-            do
+            //bool dataDeficiency = false;
+            while(ReceiveStringQueue.Length > 3)
             {
                 //切頭3碼
                 string definedLength = ReceiveStringQueue.ToString(0, 3);
-                //轉字串長度
+                //資料定義長度+資料長度
                 stringLength = Convert.ToInt32(definedLength) + definedLength.Length;
-                if (stringLength > ReceiveStringQueue.Length)
+                if (ReceiveStringQueue.Length < stringLength)
                 {
                     log.Debug(@"目前定義長度:" + stringLength + " < 現有字串長度:" + ReceiveStringQueue.Length);
-                    dataDeficiency = true;
-                    continue;
+                    //dataDeficiency = true;
+                    break;
                 }
                 //依長度取資料字串
                 string msgString = ReceiveStringQueue.ToString(0, stringLength);
@@ -843,8 +846,8 @@ namespace ALOLAsync
                 string messageType = msgString.Substring((8 + 3), 4);//3碼:字串長度 + 找Message Type當parse依據
                 TryParseMsg(messageType, msgString);
                 count++;
-            }
-            while (!dataDeficiency);
+            };
+            //log.Debug("(方法內部)處理後的字串:" + ReceiveStringQueue.ToString());
         }
 
         //暫不用分類
