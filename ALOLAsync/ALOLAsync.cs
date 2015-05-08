@@ -11,6 +11,7 @@ using System.Xml;
 using System.Timers;
 using System.Threading;
 using Common.Logging;
+using System.Linq;
 
 namespace ALOLAsync
 {
@@ -227,10 +228,11 @@ namespace ALOLAsync
         #endregion
 
         #region Property
+        private QueueStorange ReceiveBufferQ { get; set; }
 
         public Encoding Encode { get; set; }
 
-        private StringBuilder ReceiveStringQueue { get; set; }
+        private StringBuilder ReceiveBufferString { get; set; }
  
         private System.Timers.Timer timer { get; set; }
 
@@ -275,7 +277,10 @@ namespace ALOLAsync
             this.BankCode = bankCode;//
             this.MessageType = messageType;
             this.Encode = encoding;
-            this.ReceiveStringQueue = new StringBuilder();
+            //Receive Buffer 用來接收Socket receive到的資料,存放接收到資料的物件
+            this.ReceiveBufferString = new StringBuilder();
+            this.ReceiveBufferQ = new QueueStorange();
+            //
             this.asyncConnect = new AsyncConnect(ip, port, sendTimeout);
             //init timer
             //啟動連線的太碼
@@ -437,7 +442,7 @@ namespace ALOLAsync
             this.asyncConnect.Stop();
 
             //clean StringBuilder
-            this.ReceiveStringQueue.Clear();
+            this.ReceiveBufferString.Clear();
             
             //clean dictionary
             this.dicMsghandles.Clear();
@@ -492,8 +497,9 @@ namespace ALOLAsync
                     AutoloadRqt_2Bank autoloadRqt_2Bank = JsonConvert.DeserializeObject<AutoloadRqt_2Bank>(JsonString);
 
                     //1. Parse 成傳送字串
-                    string msgString = this.ALOLISO8583Parser.BuildMsg(autoloadRqt_2Bank.MESSAGE_TYPE, autoloadRqt_2Bank);
-                    log.Debug("轉ISO8583後的電文(Type:" + autoloadRqt_2Bank.MESSAGE_TYPE + ") :" + msgString);
+                    //string msgString = this.ALOLISO8583Parser.BuildMsg(autoloadRqt_2Bank.MESSAGE_TYPE, autoloadRqt_2Bank);
+                    byte[] msgBytes = this.ALOLISO8583Parser.BuildMsg(autoloadRqt_2Bank.MESSAGE_TYPE, AddDefineSize, autoloadRqt_2Bank);//委派AddDefineSize方法加料header
+                    //log.Debug("轉ISO8583後的電文(Type:" + autoloadRqt_2Bank.MESSAGE_TYPE + ") :" + msgString);
                     //初始化訊息物件
                     MsgHandle msgHandle = new MsgHandle();
                     //(Resposne) Message Type + STAN + TRANS_DATETIME //這三樣資料在Request和Response時都有資料且不變,故當作唯一值 ,即辨識ID
@@ -501,7 +507,8 @@ namespace ALOLAsync
                     msgHandle.Encoding = this.Encode;
                     msgHandle.APSocket = apSck;
                     msgHandle.workSocket = this.asyncConnect.MainSck;
-                    msgHandle.SendString = msgString;//Msg
+                    //msgHandle.SendString = msgString;//Msg//舊的  傳3碼 + 純電文
+                    msgHandle.SendBuffer = msgBytes;//新的  2碼自定義的資料長度(byte Array) + 純電文(轉byte Array)
                     if (this.dicMsghandles.ContainsKey(msgHandle.ID))
                     {
                         throw new Exception("此資料已存在於字典檔 \nID:" + msgHandle.ID + " \nSendString:" + msgHandle.SendString);
@@ -609,9 +616,68 @@ namespace ALOLAsync
             }
         }
 
+        /// <summary>
+        /// 將要送出的資料(byte[])加入(包含加料部分)
+        /// </summary>
+        /// <param name="messageType">送出的格式</param>
+        /// <param name="responseMsg">回送給銀行端的資料(含加料)</param>
+        public void Send(string messageType, byte[] responseMsg)
+        {
+            try
+            {
+                if (this.asyncConnect.Status != ConnectStatus.Connected)
+                {
+                    log.Debug("連線狀態:" + this.asyncConnect.Status.ToString() + " 開始重新連線...");
+                    //重新初始化連線物件並連線
+                    this.ReInitialObject();
+                    //開始連線
+                    this.Start();
+                    log.Debug("因連線異常已重新開始連線,故無法送出資料");
+                    return;
+                }
+                MsgHandle context = new MsgHandle()
+                {
+                    ID = messageType,
+                    Encoding = this.Encode,
+                    SendBuffer = responseMsg//SendString = responseMsg//Msg
+                };
+
+                log.Debug("開始非同步送出訊息:" + context.SendString);
+
+                this.asyncConnect.Send(context);
+            }
+            catch (Exception ex)
+            {
+                log.Debug("[Sned]" + ex.ToString());
+            }
+        }
+
         #endregion
 
         #region Delegate Method
+        /// <summary>
+        /// 自定義的資料長度(2bytes) + 純電文(轉byte array)
+        /// </summary>
+        /// <param name="msg">純電文字串</param>
+        /// <returns>加料的電文(byte[])</returns>
+        public virtual byte[] AddDefineSize(string msg)
+        {
+            //取得純電文長度
+            int msgLength = msg.Length;
+            //自定義的資料長度
+            byte[] dataSize = this.ReceiveBufferQ.IntegerToByteAry(msgLength, 2);
+            log.Debug("自定義的資料長度(byte[]):{ " + dataSize.ByteToString(0, 2) + " } MsgData:" + msg);
+            //純電文資料
+            byte[] data = this.Encode.GetBytes(msg);
+            //合併陣列
+            //byte[] result = dataSize.Concat(data).ToArray();
+            byte[] result = new byte[dataSize.Length + data.Length];
+            Buffer.BlockCopy(dataSize, 0, result, 0, dataSize.Length);
+            Buffer.BlockCopy(data, 0, result, dataSize.Length, data.Length);
+            log.Debug("合併後的byte[](length:" + result.Length + "):" + result.ByteToString(0, result.Length));
+            return result;
+        }
+
         /// <summary>
         /// 計時器的委派任務
         /// </summary>
@@ -663,13 +729,17 @@ namespace ALOLAsync
                     if (sendErr == SocketError.Success && length == msgHandle.SendBuffer.Length)
                     {
                         //接收到的MsgContext有任務要委派執行的則加入字典檔內(SignOn/Off和掛失類{Request類}需要自己自動連到AP Server)
-                        //暫時想不到好方法去過濾格式....只先過濾0810和0312的電文
-                        if ((msgHandle.ID != "0810") && (msgHandle.ID != "0800") && (msgHandle.ID != "0312") && (!string.IsNullOrEmpty(msgHandle.ID)))
+                        //只增加加值類和沖正類到任務集合內等著結果回送
+                        if ((msgHandle.ID.IndexOf("0100") > -1) ||
+                            (msgHandle.ID.IndexOf("0120") > -1) || 
+                            (msgHandle.ID.IndexOf("0121") > -1) || 
+                            (msgHandle.ID.IndexOf("0420") > -1) ||
+                            (msgHandle.ID.IndexOf("0421") > -1))
                         {
                             if (!this.dicMsghandles.ContainsKey(msgHandle.ID))
                             {
                                 dicMsghandles.Add(msgHandle.ID, msgHandle);
-                                log.Debug(msgHandle.ID + "新增至集合內 => 送出長度:" + length + " \n => 送出資料:" + msgHandle.SendString);
+                                log.Debug(msgHandle.ID + "新增至集合內 => 送出長度:" + length + " \n => 送出資料:" + msgHandle.SendBuffer.ByteToString(0, msgHandle.SendBuffer.Length));
                             }
                             else
                             {
@@ -678,7 +748,7 @@ namespace ALOLAsync
                         }
                         else
                         {
-                            log.Debug("MsgID:" + msgHandle.ID + " => 送出長度:" + length + " \n => 送出資料:" + msgHandle.SendString);
+                            log.Debug("MsgID:" + msgHandle.ID + " => 送出長度:" + length + " \n => 送出資料:" + msgHandle.SendBuffer.ByteToString(0, msgHandle.SendBuffer.Length));
                         }
                     }
                     else
@@ -730,26 +800,31 @@ namespace ALOLAsync
                     int receiveLength = receiveState.workSocket.EndReceive(ar, out receiveErr);
                     if (receiveErr == SocketError.Success)
                     {
-                        string receiveString = this.Encode.GetString(receiveState.ReceiveBuffer, 0, receiveLength);
-                        log.Debug("收到的總資料長度:" + receiveLength + " 內容:" + receiveString);
-                        //----------------------------------------------------------------------------
-                        // 測試用
-                        //若接收到資料的Key與字典檔內的Key相符,表示為此字典檔內某個msgHandle所需的接收資料
-                        //string comparekey = receiveString.Substring(0, 4);
-                        //if (this.dicMsghandles.ContainsKey(comparekey))
-                        //{
-                        //    this.dicMsghandles[comparekey].ReceiveString = receiveString;
-                        //}
-                        //----------------------2015-05-04後測試的版本------------------------------------
+                        byte[] recieveData = new byte[receiveLength];
+                        Buffer.BlockCopy(receiveState.ReceiveBuffer, 0, recieveData, 0, receiveLength);
+
+                        //--------------------Old Version--------------------------------------------------------
+                        string receiveString = this.Encode.GetString(recieveData);
+                        log.Debug("[接收端]收到的總資料長度:" + receiveLength + " 內容:" + receiveString);
+                        
+                        //----------------------2015-05-06 變成接收byte array的前兩byte當作資料長度----------------
+                        //接收到的資料塞入Queue<byte>物件
+                        log.Debug("[接收端]加入資料前Queue內的資料(byte[]):" + this.ReceiveBufferQ.ToString());
+                        this.ReceiveBufferQ.InsertData(recieveData);
+                        log.Debug("[接收端]加入接收資料後Queue內的資料(byte[]):" + this.ReceiveBufferQ.ToString());
+                        //迴圈處理StringBuilder字串,自定義的byte[]大小=>2
+                        HandleRecieveString(this.ReceiveBufferQ, 2);
+                        //log.Debug("[ReceiveCallback]處理後的字串:" + ReceiveBufferString.ToString());
+                        //----------------------2015-05-04後測試的版本(使用StringBuilder)-------------------------
                         //改用StringBiulder方式處理串接的字串
                         //將接收到的字串插入StringBuilder
-                        log.Debug("插入接收字串前的資料:" + ReceiveStringQueue.ToString());
-                        ReceiveStringQueue.Append(receiveString);
-                        log.Debug("插入接收字串後的資料:" + ReceiveStringQueue.ToString());
-                        //迴圈處理StringBuilder字串
-                        HandleRecieveString(ReceiveStringQueue);
-                        log.Debug("[ReceiveCallback]處理後的字串:" + ReceiveStringQueue.ToString());
-                        //-----------------------2015-05-04前的版本-----------------------------------------
+                        //log.Debug("插入接收字串前的資料:" + ReceiveBufferString.ToString());
+                        //ReceiveBufferString.Append(receiveString);
+                        //log.Debug("插入接收字串後的資料:" + ReceiveBufferString.ToString());
+                        ////迴圈處理StringBuilder字串
+                        //HandleRecieveString(ReceiveBufferString);
+                        //log.Debug("[ReceiveCallback]處理後的字串:" + ReceiveBufferString.ToString());
+                        //-----------------------2015-05-04前的版本----------------------------------------------
                         //if (receiveString.Length < 13)
                         //{
                         //    log.Debug("接收資料長度不符:" + receiveString.Length);
@@ -778,6 +853,14 @@ namespace ALOLAsync
                         //        //後面都不比對了(應該也沒了)
                         //        break;
                         //    }
+                        //}
+                        //----------------------------------------------------------------------------
+                        // 測試用
+                        //若接收到資料的Key與字典檔內的Key相符,表示為此字典檔內某個msgHandle所需的接收資料
+                        //string comparekey = receiveString.Substring(0, 4);
+                        //if (this.dicMsghandles.ContainsKey(comparekey))
+                        //{
+                        //    this.dicMsghandles[comparekey].ReceiveString = receiveString;
                         //}
                         //----------------old-2015-04-21--------------------
                         //string messageType = receiveString.Substring(8, 4);//找Message Type當parse依據
@@ -818,7 +901,7 @@ namespace ALOLAsync
         }
 
         /// <summary>
-        /// 截取接收到的字串作處理
+        /// [Old Version]截取接收到的字串作處理
         /// </summary>
         /// <param name="ReceiveStringQueue">接收到的字串</param>
         private void HandleRecieveString(StringBuilder ReceiveStringQueue)
@@ -844,10 +927,64 @@ namespace ALOLAsync
                 ReceiveStringQueue.Remove(0, stringLength);
                 log.Debug("第" + count + "段電文:" + " Length:" + stringLength + " \nMsgData:" + msgString);
                 string messageType = msgString.Substring((8 + 3), 4);//3碼:字串長度 + 找Message Type當parse依據
-                TryParseMsg(messageType, msgString);
+                //電文字串 => POCO資料物件
+                object obj = this.ALOLISO8583Parser.ParseMsg(messageType, msgString);
+                TryParseMsg(obj);
                 count++;
             };
             //log.Debug("(方法內部)處理後的字串:" + ReceiveStringQueue.ToString());
+        }
+
+        /// <summary>
+        /// 截取接收到的字串作處理
+        /// </summary>
+        /// <param name="bufferQ">接收到的字串</param>
+        /// <param name="defineSize">自定義的資料長度(2個byte)</param>
+        private void HandleRecieveString(QueueStorange bufferQ,int defineSize)
+        {
+            int count = 1;
+            bool isDataEnough = true;
+            while (isDataEnough)
+            {
+                //資料不足(連取自定義的值都不夠)
+                if (bufferQ.GetLength() <= defineSize)
+                {
+                    isDataEnough = false;
+                    break;
+                }
+                else 
+                {
+                    //讀取自定義長度位元(2 bytes)
+                    byte[] dataSizeBytes = bufferQ.GetQueueDefineSizeBytes(defineSize);
+                    log.Debug("[接收端]取得自定義byte[]:" + dataSizeBytes.ByteToString(0, dataSizeBytes.Length));
+                    //計算資料長度
+                    int dataSize = bufferQ.ByteAryToInteger(dataSizeBytes);
+                    log.Debug("[接收端]計算後所需資料的長度:" + dataSize);
+                    //若緩存內資料長度 >= 2bytes + 純電文大小
+                    if (bufferQ.GetLength() >= (dataSize + dataSizeBytes.Length))
+                    {
+                        log.Debug("[接收端]Queue資料足夠,開始取得Queue內的資料...");
+                        //byte[] GetdataSizeBytes = bufferQ.GetData(defineSize);
+                        //用定義長度取得所有資料(包含2碼自定義byte[])
+                        byte[] allDataBytes = bufferQ.GetData(dataSize + dataSizeBytes.Length);
+                        byte[] justISO8583Data = new byte[dataSize];
+                        Buffer.BlockCopy(allDataBytes, dataSizeBytes.Length, justISO8583Data, 0, dataSize);
+                        //電文陣列轉換成電文字串
+                        string msgString = this.Encode.GetString(justISO8583Data);
+                        log.Debug("[接收端]第" + count + "段電文:" + " Length:" + dataSize + " \nMsgData:" + msgString);
+                        string messageType = msgString.Substring((8 + 3), 4);//3碼:字串長度 + 找Message Type當parse依據
+                        //電文字串 => POCO資料物件
+                        object obj = this.ALOLISO8583Parser.ParseMsg(messageType, msgString);
+                        TryParseMsg(obj);
+                        count++;
+                    }
+                    else
+                    {
+                        isDataEnough = false;
+                        break;
+                    }
+                }
+            }
         }
 
         //暫不用分類
@@ -926,17 +1063,17 @@ namespace ALOLAsync
         /// </summary>
         /// <param name="messageType">格式(0110/0130/0430 | 0302 | 0800)</param>
         /// <param name="msg">電文字串(ASCII)</param>
-        private void TryParseMsg(string messageType, string msg)
+        private void TryParseMsg(object obj)
         {
             try
             {
                 //電文字串 => POCO資料物件
-                object obj = this.ALOLISO8583Parser.ParseMsg(messageType, msg);
+                //object obj = this.ALOLISO8583Parser.ParseMsg(messageType, msg);
                 if (obj is AutoloadRqt_2Bank)
                 {
                     //收到的資料類型是0110/0130/0430(屬於Response類)
-                    log.Debug("收到的資料類型是0110/0130/0430(屬於Response類)");
                     AutoloadRqt_2Bank bankRsp = (AutoloadRqt_2Bank)obj;
+                    log.Debug("收到的資料類型:" + bankRsp.MESSAGE_TYPE + "(屬於Response類)");
                     string key = bankRsp.MESSAGE_TYPE + bankRsp.STAN + bankRsp.TRANS_DATETIME;//辨識ID
                     log.Debug("Recieve Response: " + "\n" + 
                                       "Key:" + key + "\n" + 
@@ -960,18 +1097,18 @@ namespace ALOLAsync
                 }
                 else if (obj is AutoloadRqt_FBank)
                 {
-                    log.Debug("收到的資料類型是0302(屬於Request類)");
                     //收到的資料類型是0302(屬於Request類)
                     AutoloadRqt_FBank bankRequest = (AutoloadRqt_FBank)obj;
+                    log.Debug("收到的資料類型:" + bankRequest.MESSAGE_TYPE + "(屬於Request類)");
                     //執行連線掛失/掛失取消/增加拒絕授權流程--丟回AP並取得回應再還Response給銀行
                     this.DoLossReportOrAddRejectList(bankRequest);
                     
                 }
                 else if (obj is Sign_Domain)
                 {
-                    log.Debug("收到的資料類型是0800(屬於Request類)");
                     //收到的資料類型是0800(屬於Request類)
                     Sign_Domain sign_Domain = (Sign_Domain)obj;
+                    log.Debug("收到的資料類型:" + sign_Domain.COM_Type + "(屬於Request類)");
                     //執行Sign On/Off/Echo 流程
                     this.DoSignOn_Off_Echo(sign_Domain);
                 }
@@ -1075,9 +1212,10 @@ namespace ALOLAsync
                 "0800" +                                                        //Message Type  (4 bytes ASCII)
                 "8220000000000000" + "0400000000000000" +                       //Bit Map (Primary + Secondary)(32 bytes ASCII)
                 now.ToString("MMddHHmmss") + now.ToString("HHmmss") + "301";    //Field 07 + Field 11 + Field 70(10 + 6 + 3 bytes ASCII)
-            requestString = requestString.Length.ToString("D3") + requestString;
-            log.Debug(now.ToString("HH:mm:ss") + " 開始送出Echo電文:" + requestString);
-            this.Send("0800", requestString);
+            //requestString = requestString.Length.ToString("D3") + requestString;// +3 bytes OldVersion
+            byte[] requestBytes = this.AddDefineSize(requestString);
+            log.Debug("時間:" + now.ToString("HH:mm:ss") + " 開始送出Echo電文:" + requestString);
+            this.Send("0800", requestBytes);
         }
 
         /// <summary>
@@ -1121,7 +1259,9 @@ namespace ALOLAsync
                     log.Debug("收到AP給的資料(JSON): " + receiveJsonString);
                     Sign_Domain responseToBank = JsonConvert.DeserializeObject<Sign_Domain>(receiveJsonString);
                     //物件 => 電文字串(ASCII)
-                    string responseMSG = this.ALOLISO8583Parser.BuildMsg(responseToBank.COM_Type, responseSign: responseToBank);
+                    //string responseMSG = this.ALOLISO8583Parser.BuildMsg(responseToBank.COM_Type, responseSign: responseToBank);
+                    //送出的全部資料(陣列)
+                    byte[] responseMSG = this.ALOLISO8583Parser.BuildMsg(responseToBank.COM_Type, AddDefineSize, responseSign: responseToBank);
                     log.Debug("Send msg Context(Response) back Bank[" + responseToBank.BankCode + "]:" + responseMSG);
                     //Response送回銀行端
                     this.Send(responseToBank.COM_Type, responseMSG);
@@ -1174,7 +1314,9 @@ namespace ALOLAsync
                     log.Debug("收到AP給的資料(JSON): " + receiveJsonString);
                     AutoloadRqt_FBank responseToBank = JsonConvert.DeserializeObject<AutoloadRqt_FBank>(receiveJsonString);
 
-                    string responseMSG = this.ALOLISO8583Parser.BuildMsg(responseToBank.MESSAGE_TYPE, responseFromBank: responseToBank);
+                    //string responseMSG = this.ALOLISO8583Parser.BuildMsg(responseToBank.MESSAGE_TYPE, responseFromBank: responseToBank);
+                    //送出的全部資料(陣列)
+                    byte[] responseMSG = this.ALOLISO8583Parser.BuildMsg(responseToBank.MESSAGE_TYPE, AddDefineSize, responseFromBank: responseToBank);
                     log.Debug("Send msg Context(Response) back Bank[" + responseToBank.BANK_CODE + "]:" + responseMSG);
                     this.Send(responseToBank.MESSAGE_TYPE, responseMSG);
                     //-------------TODO..........................................

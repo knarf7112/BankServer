@@ -20,6 +20,54 @@ namespace ALOLAsync
         private static readonly ILog log = LogManager.GetLogger(typeof(Program));
         static void Main(string[] args)
         {
+            //QueueStorange bufferQ = new QueueStorange();
+            //byte[] size = bufferQ.IntegerToByteAry(62);
+            //int iii = bufferQ.ByteAryToInteger(size);
+            
+            //Console.WriteLine("Byte:" + size.ByteToString(0, 2));
+            //string echostr = "我888";// "08080800822000000000000004000000000000000420175111175111301";
+            //byte[] utf8 = Encoding.UTF8.GetBytes(echostr);
+            //byte[] ascii = Encoding.ASCII.GetBytes(echostr);
+            //string ascii2 = Encoding.ASCII.GetString(ascii);
+            //char ch = echostr[0];
+            //int iii = Convert.ToInt32(ch);
+            //int l = echostr.Length;
+            //byte[] echo = Encoding.ASCII.GetBytes(echostr);
+            //string echo1 = echo[0].ToString();
+            //byte[] ss = new byte[]{1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16};
+            //byte[] s2 = new byte[]{10,20,30,40,50,60,70,80,90,100};
+            
+            //byte[] tmpb = bufferQ.GetData(15);
+            //string oo = "ff";
+            
+            //string data = tmpb.ByteToString(3, 5);
+            //Console.WriteLine(data);
+            //Console.WriteLine(bufferQ.ToString());
+            //----------------------------------------------------------
+            //Queue<byte> bufferQ = new Queue<byte>(ss.AsEnumerable());
+            //new Thread(new ParameterizedThreadStart((object o) => {
+            //    Queue<byte> buffer = o as Queue<byte>;
+            //    lock (buffer)
+            //    {
+            //        var s3 = ((ss[0] << 2 * 4) | ss[1]);
+            //        int count = 3;
+            //        int definelength = 0;
+            //        List<byte> bList = new List<byte>(5);
+            //        for (int i = 0; i < count; i++)
+            //        {
+            //            byte tmpB = bufferQ.Dequeue();
+            //            bList.Add(tmpB);
+            //            int shiftR = tmpB << (8 * (count - (i + 1)));
+            //            definelength |= shiftR;
+            //            //definelength |= (bufferQ.Peek() << (8 * (count - (i + 1))));
+            //        }
+            //        Console.WriteLine(definelength);
+            //    }
+            //})).Start(bufferQ);
+            //Thread.Sleep(4);
+            //Console.WriteLine("de:" + bufferQ.Dequeue());
+            //Console.WriteLine(bufferQ.Count);
+            //Console.ReadKey();
             IList<SimpleServer> listSimpleServer = new List<SimpleServer>();
             //Dictionary<string, int> dic = new Dictionary<string, int>()
             //{

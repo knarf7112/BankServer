@@ -9,8 +9,8 @@
     <Connection BankCode="0808" MessageType="0120" SendSocket="Yes">60.199.64.90:9311:6000:ASCII:6000:180000</Connection>
   </Connections>
   <Connections id="3" mode="Test">
-    <Connection BankCode="0808" MessageType="0100+0420" SendSocket="Yes">127.0.0.1:9310:5000:ASCII:6000:180000</Connection>
-    <Connection BankCode="0808" MessageType="0120" SendSocket="No">127.0.0.1:9311:5000:ASCII:6000:180000</Connection>
-    <Connection BankCode="0808" MessageType="0302" SendSocket="No">127.0.0.1:9312:5000:ASCII:6000:180000</Connection>
+    <Connection BankCode="0808" MessageType="0100+0420" SendSocket="Yes">127.0.0.1:9310:5000:ASCII:6000:5000</Connection>
+    <!--<Connection BankCode="0808" MessageType="0120" SendSocket="No">127.0.0.1:9311:5000:ASCII:6000:180000</Connection>
+    <Connection BankCode="0808" MessageType="0302" SendSocket="No">127.0.0.1:9312:5000:ASCII:6000:180000</Connection>-->
   </Connections>
 </Root>

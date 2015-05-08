@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{43A5B551-D6C3-44E3-9F5F-705E5A821C79}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <ProjectGuid>{22273877-07BE-484E-A325-08D14C5277BA}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>ALOLAsync</RootNamespace>
-    <AssemblyName>ALOLAsync</AssemblyName>
+    <RootNamespace>BankAgentService</RootNamespace>
+    <AssemblyName>BankAgentService</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
@@ -22,7 +22,6 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -32,11 +31,16 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="ALCommon">
       <HintPath>..\Lib\ALCommon.dll</HintPath>
+    </Reference>
+    <Reference Include="Apache.NMS">
+      <HintPath>..\Lib\Apache.NMS.dll</HintPath>
+    </Reference>
+    <Reference Include="Apache.NMS.ActiveMQ">
+      <HintPath>..\Lib\Apache.NMS.ActiveMQ.dll</HintPath>
     </Reference>
     <Reference Include="Common.Logging">
       <HintPath>..\Lib\Common.Logging.dll</HintPath>
@@ -44,12 +48,10 @@
     <Reference Include="Common.Logging.Log4Net">
       <HintPath>..\Lib\Common.Logging.Log4Net.dll</HintPath>
     </Reference>
-    <Reference Include="IM.ISO8583.Utility, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="IM.ISO8583.Utility">
       <HintPath>..\Lib\IM.ISO8583.Utility.dll</HintPath>
     </Reference>
-    <Reference Include="ISO8583Parser, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="ISO8583Parser">
       <HintPath>..\Lib\ISO8583Parser.dll</HintPath>
     </Reference>
     <Reference Include="Kms.Crypto">
@@ -73,41 +75,50 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.configuration" />
+    <Reference Include="System.Configuration.Install" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.XML" />
+    <Reference Include="System.Management" />
     <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.ServiceProcess" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ALOLAsync.cs" />
-    <Compile Include="Extensions.cs" />
+    <Compile Include="BankAgent.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="BankAgent.Designer.cs">
+      <DependentUpon>BankAgent.cs</DependentUpon>
+    </Compile>
     <Compile Include="Program.cs" />
+    <Compile Include="ProjectInstaller.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ProjectInstaller.Designer.cs">
+      <DependentUpon>ProjectInstaller.cs</DependentUpon>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="QueueStorange.cs" />
-    <Compile Include="SimpleServer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="ProjectInstaller.resx">
+      <DependentUpon>ProjectInstaller.cs</DependentUpon>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="log4net.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ALOLAsync\ALOLAsync.csproj">
+      <Project>{43a5b551-d6c3-44e3-9f5f-705e5a821c79}</Project>
+      <Name>ALOLAsync</Name>
+    </ProjectReference>
     <ProjectReference Include="..\AsyncConnection\AsyncConnection.csproj">
       <Project>{5980217b-5d58-458a-90a3-146fc50f8262}</Project>
       <Name>AsyncConnection</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup />
-  <ItemGroup>
-    <Content Include="Config\BankConfig.xml">
-      <SubType>Designer</SubType>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Config\ServiceConfig.xml">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <SubType>Designer</SubType>
-    </Content>
-    <Content Include="log4net.xml">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

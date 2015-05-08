@@ -21,6 +21,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AsyncConnection", "AsyncCon
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ALOLAsync", "ALOLAsync\ALOLAsync.csproj", "{43A5B551-D6C3-44E3-9F5F-705E5A821C79}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BankAgentService", "BankAgentService\BankAgentService.csproj", "{22273877-07BE-484E-A325-08D14C5277BA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -63,6 +65,10 @@ Global
 		{43A5B551-D6C3-44E3-9F5F-705E5A821C79}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{43A5B551-D6C3-44E3-9F5F-705E5A821C79}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{43A5B551-D6C3-44E3-9F5F-705E5A821C79}.Release|Any CPU.Build.0 = Release|Any CPU
+		{22273877-07BE-484E-A325-08D14C5277BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{22273877-07BE-484E-A325-08D14C5277BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{22273877-07BE-484E-A325-08D14C5277BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{22273877-07BE-484E-A325-08D14C5277BA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

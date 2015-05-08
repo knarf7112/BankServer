@@ -1,0 +1,101 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>ISO8583Parser</name>
+    </assembly>
+    <members>
+        <member name="T:ALOLAsync.ParseRealMsg">
+            <summary>
+            委派外部方法切割來源電文(byte[])並轉成純電文給ParseMsg去轉物件
+            </summary>
+            <param name="data">來源資料</param>
+            <returns>純ISO8583電文</returns>
+        </member>
+        <member name="T:ALOLAsync.BuildMsgAndAddHeader">
+            <summary>
+            將物件轉純電文後再委派外部方法去加料純電文
+            </summary>
+            <param name="msg"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ALOLAsync.ISO8583Parser.ParseMsg``1(System.String,System.String)">
+            <summary>
+            電文轉物件(0110/0130 | 0430 | 0800 | 0302)
+            </summary>
+            <typeparam name="T">(0110/0130/0430(AutoloadRqt_2Bank) | 0800(Sign_Domain) | 0302(AutoloadRqt_FBank))</typeparam>
+            <param name="messageType">轉換的格式</param>
+            <param name="msgString">電文字串</param>
+            <returns>AutoloadRqt_2Bank/Sign_Domain/AutoloadRqt_FBank POCO(要自己輸入要轉哪種型別)</returns>
+        </member>
+        <member name="M:ALOLAsync.ISO8583Parser.ParseMsg(System.String,System.String)">
+            <summary>
+            電文轉物件[電文不含自定義資料長度的位元數](0110/0130 | 0430 | 0800 | 0302)~~自己轉型吧
+            </summary>
+            <typeparam name="T">(0110/0130/0430(AutoloadRqt_2Bank) | 0800(Sign_Domain) | 0302(AutoloadRqt_FBank))</typeparam>
+            <param name="messageType">轉換的格式</param>
+            <param name="msgString">電文字串</param>
+            <returns>AutoloadRqt_2Bank/Sign_Domain/AutoloadRqt_FBank POCO(要自己輸入要轉哪種型別)</returns>
+        </member>
+        <member name="M:ALOLAsync.ISO8583Parser.ParseMsg(System.String,System.Byte[],ALOLAsync.ParseRealMsg)">
+            <summary>
+            電文轉物件[電文包含自定義資料長度的位元數](0110/0130 | 0430 | 0800 | 0302)~~自己轉型吧
+            </summary>
+            <typeparam name="T">(0110/0130/0430(AutoloadRqt_2Bank) | 0800(Sign_Domain) | 0302(AutoloadRqt_FBank))</typeparam>
+            <param name="messageType">轉換的格式</param>
+            <param name="data">電文資料byte Array</param>
+            <param name="getMsg">委派的方法</param>
+            <returns>AutoloadRqt_2Bank/Sign_Domain/AutoloadRqt_FBank POCO(要自己輸入要轉哪種型別)</returns>
+        </member>
+        <member name="M:ALOLAsync.ISO8583Parser.ParseALOLResponse(System.String)">
+            <summary>
+            自動加值/代行取得授權的Response電文轉物件
+            </summary>
+            <param name="msgString">Response電文字串</param>
+            <returns>自動加值/代行取得授權的Response物件</returns>
+        </member>
+        <member name="M:ALOLAsync.ISO8583Parser.BuildMsg(System.String,OL_Autoload_Lib.AutoloadRqt_2Bank,OL_Autoload_Lib.AutoloadRqt_FBank,OL_Autoload_Lib.Sign_Domain)">
+            <summary>
+            物件轉換成電文[不含自定義資料長度](授權/代行授權/沖正授權)
+            </summary>
+            <param name="messageType">要求格式(0100/0120/0121 | 0420/0421 | 0810 | 0312)</param>
+            <param name="requestToBank">要求(授權/代行授權 | 沖正授權 | Sign On/Off/Echo | )物件</param>
+            <returns>Response to Bank電文</returns>
+        </member>
+        <member name="M:ALOLAsync.ISO8583Parser.BuildMsg(System.String,ALOLAsync.BuildMsgAndAddHeader,OL_Autoload_Lib.AutoloadRqt_2Bank,OL_Autoload_Lib.AutoloadRqt_FBank,OL_Autoload_Lib.Sign_Domain)">
+            <summary>
+            物件轉換成電文[含自定義資料長度位元數](授權/代行授權/沖正授權)
+            </summary>
+            <param name="messageType">要求格式(0100/0120/0121 | 0420/0421 | 0810 | 0312)</param>
+            <param name="requestToBank">要求(授權/代行授權 | 沖正授權 | Sign On/Off/Echo | )物件</param>
+            <returns>Response to Bank電文</returns>
+        </member>
+        <member name="M:ALOLAsync.ISO8583Parser.ConvertLossReportOrAddRejectList(OL_Autoload_Lib.AutoloadRqt_FBank)">
+            <summary>
+            轉換連線掛失/掛失取消/新增拒絕代行授權名單 Response 電文
+            </summary>
+            <param name="responseFromBank">POCO物件</param>
+            <returns>Response電文字串</returns>
+        </member>
+        <member name="M:ALOLAsync.ISO8583Parser.ConvertSignResponse(OL_Autoload_Lib.Sign_Domain)">
+            <summary>
+            轉換成Sign On/Off Resposne電文
+            </summary>
+            <param name="responseSign">response物件</param>
+            <returns>Sign Response 電文字串</returns>
+        </member>
+        <member name="M:ALOLAsync.ISO8583Parser.ConvertRALOLRequest(OL_Autoload_Lib.AutoloadRqt_2Bank)">
+            <summary>
+            沖正Request
+            </summary>
+            <param name="requestToBank">沖正物件</param>
+            <returns>沖正電文</returns>
+        </member>
+        <member name="M:ALOLAsync.ISO8583Parser.ConvertALOLRequest(OL_Autoload_Lib.AutoloadRqt_2Bank)">
+            <summary>
+            請求授權(自動加值/代行)
+            </summary>
+            <param name="requestToBank">請求授權物件</param>
+            <returns>請求授權電文</returns>
+        </member>
+    </members>
+</doc>
