@@ -730,11 +730,9 @@ namespace ALOLAsync
                     {
                         //接收到的MsgContext有任務要委派執行的則加入字典檔內(SignOn/Off和掛失類{Request類}需要自己自動連到AP Server)
                         //只增加加值類和沖正類到任務集合內等著結果回送
-                        if ((msgHandle.ID.IndexOf("0100") > -1) ||
-                            (msgHandle.ID.IndexOf("0120") > -1) || 
-                            (msgHandle.ID.IndexOf("0121") > -1) || 
-                            (msgHandle.ID.IndexOf("0420") > -1) ||
-                            (msgHandle.ID.IndexOf("0421") > -1))
+                        if ((msgHandle.ID.IndexOf("0110") > -1) ||
+                            (msgHandle.ID.IndexOf("0130") > -1) || 
+                            (msgHandle.ID.IndexOf("0430") > -1))
                         {
                             if (!this.dicMsghandles.ContainsKey(msgHandle.ID))
                             {
@@ -926,7 +924,7 @@ namespace ALOLAsync
                 //移除
                 ReceiveStringQueue.Remove(0, stringLength);
                 log.Debug("第" + count + "段電文:" + " Length:" + stringLength + " \nMsgData:" + msgString);
-                string messageType = msgString.Substring((8 + 3), 4);//3碼:字串長度 + 找Message Type當parse依據
+                string messageType = msgString.Substring(8, 4);// + 3), 4);//3碼:字串長度 + 找Message Type當parse依據
                 //電文字串 => POCO資料物件
                 object obj = this.ALOLISO8583Parser.ParseMsg(messageType, msgString);
                 TryParseMsg(obj);
@@ -972,7 +970,7 @@ namespace ALOLAsync
                         //電文陣列轉換成電文字串
                         string msgString = this.Encode.GetString(justISO8583Data);
                         log.Debug("[接收端]第" + count + "段電文:" + " Length:" + dataSize + " \nMsgData:" + msgString);
-                        string messageType = msgString.Substring((8 + 3), 4);//3碼:字串長度 + 找Message Type當parse依據
+                        string messageType = msgString.Substring(8, 4);//(8 + 3), 4);//3碼:字串長度 + 找Message Type當parse依據
                         //電文字串 => POCO資料物件
                         object obj = this.ALOLISO8583Parser.ParseMsg(messageType, msgString);
                         TryParseMsg(obj);
@@ -1262,7 +1260,7 @@ namespace ALOLAsync
                     //string responseMSG = this.ALOLISO8583Parser.BuildMsg(responseToBank.COM_Type, responseSign: responseToBank);
                     //送出的全部資料(陣列)
                     byte[] responseMSG = this.ALOLISO8583Parser.BuildMsg(responseToBank.COM_Type, AddDefineSize, responseSign: responseToBank);
-                    log.Debug("Send msg Context(Response) back Bank[" + responseToBank.BankCode + "]:" + responseMSG);
+                    log.Debug("Send Complete Msg include definedSize(Response) back Bank[" + responseToBank.BankCode + "]: length:" + responseMSG.Length + "  AllMsg(byte):" + responseMSG.ByteToString(0, responseMSG.Length));
                     //Response送回銀行端
                     this.Send(responseToBank.COM_Type, responseMSG);
                 }
@@ -1317,7 +1315,7 @@ namespace ALOLAsync
                     //string responseMSG = this.ALOLISO8583Parser.BuildMsg(responseToBank.MESSAGE_TYPE, responseFromBank: responseToBank);
                     //送出的全部資料(陣列)
                     byte[] responseMSG = this.ALOLISO8583Parser.BuildMsg(responseToBank.MESSAGE_TYPE, AddDefineSize, responseFromBank: responseToBank);
-                    log.Debug("Send msg Context(Response) back Bank[" + responseToBank.BANK_CODE + "]:" + responseMSG);
+                    log.Debug("Send Complete Msg include definedSize(Response) back Bank[" + responseToBank.BANK_CODE + "]: length:" + responseMSG.Length + "  AllMsg(byte):" + responseMSG.ByteToString(0, responseMSG.Length));
                     this.Send(responseToBank.MESSAGE_TYPE, responseMSG);
                     //-------------TODO..........................................
                 }
