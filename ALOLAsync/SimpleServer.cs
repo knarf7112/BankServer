@@ -94,7 +94,7 @@ namespace ALOLAsync
                     log.Debug("continue a new BeginAccept");
                 }
                 while (this.keepService);
-                log.Debug("End Start()...");
+                log.Debug("End Start...");
             }
             catch (Exception ex)
             {

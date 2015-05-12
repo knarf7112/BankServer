@@ -36,12 +36,6 @@
     <Reference Include="ALCommon">
       <HintPath>..\Lib\ALCommon.dll</HintPath>
     </Reference>
-    <Reference Include="Apache.NMS">
-      <HintPath>..\Lib\Apache.NMS.dll</HintPath>
-    </Reference>
-    <Reference Include="Apache.NMS.ActiveMQ">
-      <HintPath>..\Lib\Apache.NMS.ActiveMQ.dll</HintPath>
-    </Reference>
     <Reference Include="Common.Logging">
       <HintPath>..\Lib\Common.Logging.dll</HintPath>
     </Reference>
@@ -103,12 +97,25 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="BankAgent.resx">
+      <DependentUpon>BankAgent.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="ProjectInstaller.resx">
       <DependentUpon>ProjectInstaller.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="log4net.xml" />
+    <Content Include="Config\BankConfig.xml">
+      <SubType>Designer</SubType>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Config\ServiceConfig.xml">
+      <SubType>Designer</SubType>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="log4net.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ALOLAsync\ALOLAsync.csproj">

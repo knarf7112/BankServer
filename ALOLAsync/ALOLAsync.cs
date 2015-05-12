@@ -471,13 +471,13 @@ namespace ALOLAsync
                 }
                 byte[] receiveData = new byte[0x1000];
                 SocketError socketErr;
-                log.Debug("開始接收資料");
+                log.Debug("開始接收AP傳送的資料");
                 int receiveLength = apSck.Receive(receiveData, 0, receiveData.Length, SocketFlags.None, out socketErr);
 
                 #region 接收AP端異常時
                 if (receiveLength == 0)
                 {
-                    log.Debug("接收AP的Receive資料為0");
+                    log.Debug("AP 傳送的資料長度為0");
                     return String.Empty;
                 }
                 if (socketErr != SocketError.Success)
@@ -490,10 +490,10 @@ namespace ALOLAsync
 
                 else
                 {
-                    log.Debug("開始接收AP資料");
+                    //log.Debug("開始接收AP資料");
                     Array.Resize<byte>(ref receiveData, receiveLength);
                     string JsonString = Encoding.UTF8.GetString(receiveData, 0, receiveLength);
-                    log.Debug("AP傳來的物件:" + JsonString);
+                    log.Debug("AP send => jsonString:" + JsonString);
                     AutoloadRqt_2Bank autoloadRqt_2Bank = JsonConvert.DeserializeObject<AutoloadRqt_2Bank>(JsonString);
 
                     //1. Parse 成傳送字串
@@ -809,7 +809,7 @@ namespace ALOLAsync
                         //接收到的資料塞入Queue<byte>物件
                         log.Debug("[接收端]加入資料前Queue內的資料(byte[]):" + this.ReceiveBufferQ.ToString());
                         this.ReceiveBufferQ.InsertData(recieveData);
-                        log.Debug("[接收端]加入接收資料後Queue內的資料(byte[]):" + this.ReceiveBufferQ.ToString());
+                        //log.Debug("[接收端]加入接收資料後Queue內的資料(byte[]):" + this.ReceiveBufferQ.ToString());
                         //迴圈處理StringBuilder字串,自定義的byte[]大小=>2
                         HandleRecieveString(this.ReceiveBufferQ, 2);
                         //log.Debug("[ReceiveCallback]處理後的字串:" + ReceiveBufferString.ToString());
@@ -957,7 +957,7 @@ namespace ALOLAsync
                     log.Debug("[接收端]取得自定義byte[]:" + dataSizeBytes.ByteToString(0, dataSizeBytes.Length));
                     //計算資料長度
                     int dataSize = bufferQ.ByteAryToInteger(dataSizeBytes);
-                    log.Debug("[接收端]計算後所需資料的長度:" + dataSize);
+                    //log.Debug("[接收端]計算後所需資料的長度:" + dataSize);
                     //若緩存內資料長度 >= 2bytes + 純電文大小
                     if (bufferQ.GetLength() >= (dataSize + dataSizeBytes.Length))
                     {
@@ -967,7 +967,7 @@ namespace ALOLAsync
                         byte[] allDataBytes = bufferQ.GetData(dataSize + dataSizeBytes.Length);
                         byte[] justISO8583Data = new byte[dataSize];
                         Buffer.BlockCopy(allDataBytes, dataSizeBytes.Length, justISO8583Data, 0, dataSize);
-                        //電文陣列轉換成電文字串
+                        //純電文陣列轉換成電文字串
                         string msgString = this.Encode.GetString(justISO8583Data);
                         log.Debug("[接收端]第" + count + "段電文:" + " Length:" + dataSize + " \nMsgData:" + msgString);
                         string messageType = msgString.Substring(8, 4);//(8 + 3), 4);//3碼:字串長度 + 找Message Type當parse依據
