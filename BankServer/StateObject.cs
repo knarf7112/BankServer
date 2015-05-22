@@ -6,6 +6,7 @@ namespace BankServer
     // State object for reading client data asynchronously
     public class StateObject
     {
+        public int ClinetNO;
         // Client  socket.
         public Socket workSocket = null;
         // Size of receive buffer.

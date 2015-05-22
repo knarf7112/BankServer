@@ -1,0 +1,9 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="UnitTest_ALOLAsync.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="ServerSetting" Type="System.String" Scope="User">
+      <Value Profile="(Default)">6107:200:1:5000:5000</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>

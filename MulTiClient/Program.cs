@@ -5,11 +5,42 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
 using System.Net.Http;
+using System.Diagnostics;
 namespace MulTiClient
 {
     class Program
     {
+        private static int newTask(int ms)
+        {
+            Console.WriteLine("任務開始");
+            Thread.Sleep(ms);
+            Random random = new Random();
+            int n = random.Next(10000);
+            Console.WriteLine("任務完成");
+            return n;
+        }
+
+        private delegate int NewTaskDelegate(int ms);
+
+
         static void Main(string[] args)
+        {
+            Debug.WriteLine("Qoo1");
+            Debug.Print("TEst123");
+            Console.WriteLine("Qoo2");
+            string dateTime = "20150312122430";
+            DateTime d = DateTime.ParseExact(dateTime, "yyyyMMddHHmmss", System.Globalization.CultureInfo.InvariantCulture);
+
+            NewTaskDelegate task = newTask;
+            IAsyncResult asyncResult = task.BeginInvoke(2000, null, null);
+
+            // EndInvoke方法将被阻塞2秒
+            int result = task.EndInvoke(asyncResult);
+            Console.WriteLine(result);
+            Console.ReadKey();
+        }
+        //--------------------------------------------------------------------------
+        static void Main2(string[] args)
         {
             Task<int> t = AccessTheWebAsync();
             Console.WriteLine((int)t.Result);

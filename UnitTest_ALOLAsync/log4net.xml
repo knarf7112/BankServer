@@ -7,7 +7,7 @@
   </appender>
   <appender name="RollingFileAppender" type="log4net.Appender.RollingFileAppender,log4net">
     <!--為了Debug，先把log存到文鴻的D:/temp/log.txt-->
-    <file value="D:\\temp\\BankAgent0012.txt" />
+    <file value="D:\\temp\\UnitTest_ALOLAsync.txt" />
     <appendToFile value="true" />
     <rollingStyle value="Size" />
     <maxSizeRollBackups value="10" />
@@ -27,7 +27,7 @@
     <connectionType value="Npgsql.NpgsqlConnection, Npgsql, Version=2.0.12.0, Culture=neutral, PublicKeyToken=5d8b90d52f46fda7" />
     <connectionString value="Server=10.27.68.151;Port=5432;User Id=test;Password=test123;Database=logdb;" />
     <commandText value=
-       "INSERT INTO alcenterlog( Date, Thread, Level, Logger, Message, Exception, HostId ) VALUES ( :log_date, :thread, :log_level, :logger, :message, :exception, 'BankAgent08080100' )"
+       "INSERT INTO alcenterlog( Date, Thread, Level, Logger, Message, Exception, HostId ) VALUES ( :log_date, :thread, :log_level, :logger, :message, :exception, 'Test' )"
     />
     <parameter>
       <parameterName value=":log_date" />
@@ -76,15 +76,15 @@
   <root>
     <level value="ALL"/>
     <!--把Log輸出到Console-->
-    <!--<appender-ref ref="ConsoleAppender"/>-->
+    <appender-ref ref="ConsoleAppender"/>
     <!--把Log輸出到檔案-->
     <appender-ref ref="RollingFileAppender"/>
-	  <!--<appender-ref ref="AdoNetAppender"/>-->
+    <!--<appender-ref ref="AdoNetAppender"/>-->
     <!--
         <appender-ref ref="EventLogAppender"/>
     -->
   </root>
-  <logger name="BankAgentService">
+  <logger name="ALOLAsync">
     <level value="ALL"/>
   </logger>
 </log4net>

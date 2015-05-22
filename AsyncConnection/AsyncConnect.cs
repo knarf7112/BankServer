@@ -604,8 +604,10 @@ namespace AsyncConnection
                 }
                 this.ManualInited = false;
                 this.IsStop = true;
-                this.SendDone.Close();
-                this.ReceiveDone.Close();
+                if (this.SendDone != null)
+                    this.SendDone.Close();
+                if (this.ReceiveDone != null)
+                    this.ReceiveDone.Close();
                 this.SendDone = null;
                 this.ReceiveDone = null;
             }

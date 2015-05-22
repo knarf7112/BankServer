@@ -796,7 +796,7 @@ namespace ALOLAsync
                     ReceiveState receiveState = (ReceiveState)ar.AsyncState;
 
                     int receiveLength = receiveState.workSocket.EndReceive(ar, out receiveErr);
-                    if (receiveErr == SocketError.Success)
+                    if (receiveErr == SocketError.Success && receiveLength != 0)
                     {
                         byte[] recieveData = new byte[receiveLength];
                         Buffer.BlockCopy(receiveState.ReceiveBuffer, 0, recieveData, 0, receiveLength);
