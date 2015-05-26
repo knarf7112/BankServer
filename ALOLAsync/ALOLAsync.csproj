@@ -38,9 +38,6 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ALCommon">
-      <HintPath>..\Lib\ALCommon.dll</HintPath>
-    </Reference>
     <Reference Include="Common.Logging">
       <HintPath>..\Lib\Common.Logging.dll</HintPath>
     </Reference>

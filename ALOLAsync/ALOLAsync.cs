@@ -11,7 +11,6 @@ using System.Xml;
 using System.Timers;
 using System.Threading;
 using Common.Logging;
-using System.Linq;
 
 namespace ALOLAsync
 {
@@ -803,13 +802,13 @@ namespace ALOLAsync
 
                         //--------------------Old Version--------------------------------------------------------
                         string receiveString = this.Encode.GetString(recieveData);
-                        log.Debug("[接收端]收到的總資料長度:" + receiveLength + " 內容:" + receiveString);
+                        log.Debug("[接收端]此次收到的總資料長度:" + receiveLength + " 內容:" + receiveString);
                         
                         //----------------------2015-05-06 變成接收byte array的前兩byte當作資料長度----------------
                         //接收到的資料塞入Queue<byte>物件
-                        log.Debug("[接收端]加入資料前Queue內的資料(byte[]):" + this.ReceiveBufferQ.ToString());
+                        log.Debug("[接收端暫存器]接收前(byte[]): length:" + this.ReceiveBufferQ.GetLength() + " Data:" + this.ReceiveBufferQ.ToString());
                         this.ReceiveBufferQ.InsertData(recieveData);
-                        //log.Debug("[接收端]加入接收資料後Queue內的資料(byte[]):" + this.ReceiveBufferQ.ToString());
+                        log.Debug("[接收端暫存器]接收後(byte[]): length:" + this.ReceiveBufferQ.GetLength() + " Data:" + this.ReceiveBufferQ.ToString());
                         //迴圈處理StringBuilder字串,自定義的byte[]大小=>2
                         HandleRecieveString(this.ReceiveBufferQ, 2);
                         //log.Debug("[ReceiveCallback]處理後的字串:" + ReceiveBufferString.ToString());
@@ -867,7 +866,8 @@ namespace ALOLAsync
                     }
                     else
                     {
-                        log.Debug("非同步接收失敗:" + receiveErr.ToString());//用nmap當server測試斷線都就會產生ConnectReset的socket錯誤
+                        log.Debug("非同步接收異常:SocketError=>" + receiveErr.ToString() + "  length=>" + receiveLength);//用nmap當server測試斷線都就會產生ConnectReset的socket錯誤
+                        throw new SocketException((int)receiveErr);
                     }
                 }
             }
@@ -886,7 +886,7 @@ namespace ALOLAsync
             catch (ObjectDisposedException objEx)
             {
                 //Socket物件若被dispose,會有一個最後的Async receive會因被強制停止而產生excpetion
-                log.Error("[ReceiveCallback]ObjectDisposedException:" + objEx.ToString());
+                log.Error("[ALOLAsync][ReceiveCallback]ObjectDisposedException:" + objEx.ToString());
             }
             catch (Exception ex)
             {
@@ -961,7 +961,7 @@ namespace ALOLAsync
                     //若緩存內資料長度 >= 2bytes + 純電文大小
                     if (bufferQ.GetLength() >= (dataSize + dataSizeBytes.Length))
                     {
-                        log.Debug("[接收端]Queue資料足夠,開始取得Queue內的資料...");
+                        //log.Debug("[接收端]Queue資料足夠,開始取得Queue內的資料...");
                         //byte[] GetdataSizeBytes = bufferQ.GetData(defineSize);
                         //用定義長度取得所有資料(包含2碼自定義byte[])
                         byte[] allDataBytes = bufferQ.GetData(dataSize + dataSizeBytes.Length);
@@ -1231,7 +1231,7 @@ namespace ALOLAsync
                 int port = Convert.ToInt32(serverConfig[1]);
                 int sendTimeout = Convert.ToInt32(serverConfig[2]);
                 int receivetimeout = Convert.ToInt32(serverConfig[3]);
-                log.Debug("取得XML資源檔設定: \nIP:" + ip + " \nPort:" + port + " \nSendTimeout:" + sendTimeout + "\nReceiveTimeout:" + receivetimeout);
+                //log.Debug("取得XML資源檔設定: \nIP:" + ip + " \nPort:" + port + " \nSendTimeout:" + sendTimeout + "\nReceiveTimeout:" + receivetimeout);
                 //送出的資料: Object => json string => byte[]
                 string sendJsonString = JsonConvert.SerializeObject(bankRequest);
                 log.Debug("送出的資料(JSON):" + sendJsonString);
