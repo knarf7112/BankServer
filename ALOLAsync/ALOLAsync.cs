@@ -352,6 +352,8 @@ namespace ALOLAsync
                         this.timer.Stop();
                         //開始Echo Test 計時器
                         this.EchoTimer.Start();
+                        //初始化接收緩存元件
+                        this.ReceiveBufferQ = new QueueStorange();
                         //開始接收
                         this.asyncConnect.StartAsyncReceive(new ReceiveState());
                         //是否重新初始化連線物件過
