@@ -12,7 +12,7 @@ namespace BankAgentService
 {
     public partial class BankAgent : ServiceBase
     {
-        private static readonly ILog log = LogManager.GetLogger(typeof(Program));
+        private static readonly ILog log = LogManager.GetLogger(typeof(BankAgent));
         IList<SimpleServer> listSimpleServer;
         public BankAgent()
         {
@@ -31,7 +31,7 @@ namespace BankAgentService
                     string[] setting = appSettingKeys[str].Split(':');
                     if (setting.Length != 5)
                     {
-                        log.Debug("此key:" + str + "的appSettings(5個)設定錯誤 => parameters:" + setting.Length);
+                        log.Error("此key:" + str + "的appSettings(5個)設定錯誤 => parameters:" + setting.Length);
                         continue;
                     };
                     int listenPort = Convert.ToInt32(setting[0]);

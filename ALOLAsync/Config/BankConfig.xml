@@ -19,7 +19,7 @@
     <Connection BankCode="0822" MessageType="0302" SendSocket="No">172.16.8.194:4601:5000:ASCII:6000:180000</Connection>
   </Connections>
   <Connections id="11" mode="Test">
-    <Connection BankCode="0808" MessageType="0100+0420" SendSocket="Yes">127.0.0.1:9310:5000:ASCII:6000:5000</Connection>
+    <Connection BankCode="0808" MessageType="0100+0420" SendSocket="Yes">127.0.0.1:9999:5000:ASCII:5000:1800000</Connection>
     <!--<Connection BankCode="0808" MessageType="0120" SendSocket="No">127.0.0.1:9311:5000:ASCII:6000:180000</Connection>
     <Connection BankCode="0808" MessageType="0302" SendSocket="No">127.0.0.1:9312:5000:ASCII:6000:180000</Connection>-->
   </Connections>

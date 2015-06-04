@@ -468,6 +468,8 @@ namespace ALOLAsync
                 {
                     log.Debug("連線狀態:" + this.asyncConnect.Status.ToString() + " 開始重新連線...");
                     //重新初始化連線物件並連線
+                    this.ReInitialObject();
+                    //重新初始化連線物件並連線
                     this.Start();
                 }
                 byte[] receiveData = new byte[0x1000];
@@ -881,6 +883,8 @@ namespace ALOLAsync
                 //{
                     //this.WaitStartdone.Reset();
                     log.Error("對方可能斷線... 所以開始重新連線 ...");
+                    //重新初始化連線物件並連線
+                    this.ReInitialObject();
                     this.Start();
                     //this.WaitStartdone.WaitOne();
                 //}
@@ -1242,6 +1246,9 @@ namespace ALOLAsync
 
                 using (SocketClient.Domain.SocketClient toAP = new SocketClient.Domain.SocketClient(ip, port, sendTimeout, receivetimeout))
                 {
+                    toAP.OnCatchException = (Exception ex) => {
+                        log.Error("SocketClient Error: " + ex.StackTrace);
+                    };
                     if (toAP.ConnectToServer())
                     {
                         receiveBytes = toAP.SendAndReceive(dataBytes);
@@ -1288,7 +1295,7 @@ namespace ALOLAsync
                 int port = Convert.ToInt32(serverConfig[1]);
                 int sendTimeout = Convert.ToInt32(serverConfig[2]);
                 int receivetimeout = Convert.ToInt32(serverConfig[3]);
-                log.Debug("取得XML資源檔設定: \nIP:" + ip + " \nPort:" + port + " \nSendTimeout:" + sendTimeout + "\nReceiveTimeout:" + receivetimeout);
+                //log.Info("取得XML資源檔設定: \nIP:" + ip + " \nPort:" + port + " \nSendTimeout:" + sendTimeout + "\nReceiveTimeout:" + receivetimeout);
                 //送出的資料: Object => json string => byte[]
                 string sendJsonString = JsonConvert.SerializeObject(bankRequest);
                 log.Debug("送出的資料(JSON):" + sendJsonString);
@@ -1297,6 +1304,10 @@ namespace ALOLAsync
 
                 using (SocketClient.Domain.SocketClient toAP = new SocketClient.Domain.SocketClient(ip, port, sendTimeout, receivetimeout))
                 {
+                    toAP.OnCatchException = (Exception ex) =>
+                    {
+                        log.Error("SocketClient Error: " + ex.StackTrace);
+                    };
                     if (toAP.ConnectToServer())
                     {
                         receiveBytes = toAP.SendAndReceive(dataBytes);

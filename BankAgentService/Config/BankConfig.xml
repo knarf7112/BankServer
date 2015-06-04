@@ -1,44 +1,87 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Root>
-  <!--<Connections id="1" mode="Offical" Name="玉山銀">
+  <!--BankCode:玉山銀 MessageType:電文發送的種類 127.0.0.1:IP 999:Port 10000:送出逾時 ASCII:編碼格式 6000:重新連線間隔時間(ms) 180000:送出的EchoRequest間隔時間(ms)-->
+  <Connections id="1" mode="Offical" Name="玉山銀">
+    <Connection BankCode="0808" MessageType="0100+0420" SendSocket="Yes">::5000:ASCII:6000:180000</Connection>
+    <Connection BankCode="0808" MessageType="0302" SendSocket="No">::5000:ASCII:6000:180000</Connection>
+  </Connections>
+  <Connections id="2" mode="Offical" Name="玉山銀">
+    <Connection BankCode="0808" MessageType="0120" SendSocket="Yes">::5000:ASCII:6000:180000</Connection>
+  </Connections>
+  <!--<Connections id="3" mode="Offical" Name="華南銀">
+    <Connection BankCode="0008" MessageType="0100+0420" SendSocket="Yes">172.16.8.70:3281:5000:ASCII:6000:180000</Connection>
+    <Connection BankCode="0008" MessageType="0302" SendSocket="No">172.16.8.70:3282:5000:ASCII:6000:180000</Connection>
+  </Connections>-->
+  <!--<Connections id="4" mode="Offical" Name="中信銀">
+    <Connection BankCode="0822" MessageType="0100+0420" SendSocket="Yes">172.16.8.195:4600:5000:ASCII:6000:180000</Connection>
+    <Connection BankCode="0822" MessageType="0302" SendSocket="No">172.16.8.195:4601:5000:ASCII:6000:180000</Connection>
+  </Connections>-->
+  <!--<Connections id="5" mode="Offical" Name="大眾銀">
+    <Connection BankCode="0814" MessageType="0100+0420" SendSocket="Yes">172.16.8.161:7003:5000:ASCII:6000:180000</Connection>
+    <Connection BankCode="0814" MessageType="0302" SendSocket="No">172.16.8.161:7001:5000:ASCII:6000:180000</Connection>
+  </Connections>
+  <Connections id="6" mode="Offical" Name="大眾銀">
+    <Connection BankCode="0814" MessageType="0120" SendSocket="Yes">172.16.8.161:7002:5000:ASCII:6000:180000</Connection>
+  </Connections>-->
+  <!--<Connections id="7" mode="Offical" Name="第一銀">
+    <Connection BankCode="0007" MessageType="0100+0420" SendSocket="Yes">172.16.8.1:6900:5000:ASCII:6000:180000</Connection>
+    <Connection BankCode="0007" MessageType="0302" SendSocket="No">172.16.8.1:6500:5000:ASCII:6000:180000</Connection>
+  </Connections>-->
+  <!--<Connections id="8" mode="Offical" Name="元大銀">
+    <Connection BankCode="0806" MessageType="0100+0420" SendSocket="Yes">172.16.8.102:14500:5000:ASCII:6000:180000</Connection>
+    <Connection BankCode="0806" MessageType="0302" SendSocket="No">172.16.8.102:14502:5000:ASCII:6000:180000</Connection>
+  </Connections>
+  <Connections id="9" mode="Offical" Name="元大銀">
+    <Connection BankCode="0806" MessageType="0120" SendSocket="Yes">172.16.8.102:14501:5000:ASCII:6000:180000</Connection>
+  </Connections>-->
+  <!--<Connections id="10" mode="Offical" Name="富邦銀">
+    <Connection BankCode="0012" MessageType="0100+0420" SendSocket="Yes">::5000:ASCII:6000:180000</Connection>
+    <Connection BankCode="0012" MessageType="0302" SendSocket="No">::5000:ASCII:6000:180000</Connection>
+  </Connections>-->
+  <!--<Connections id="11" mode="Test">
+    <Connection BankCode="0808" MessageType="0100+0420" SendSocket="Yes">127.0.0.1:9310:5000:ASCII:6000:5000</Connection>
+    <Connection BankCode="0808" MessageType="0120" SendSocket="No">127.0.0.1:9311:5000:ASCII:6000:180000</Connection>
+    <Connection BankCode="0808" MessageType="0302" SendSocket="No">127.0.0.1:9312:5000:ASCII:6000:180000</Connection>
+  </Connections>-->
+ <!--<Connections id="12" mode="Test" Name="玉山銀">
     --><!--BankCode:玉山銀 MessageType:電文發送的種類 127.0.0.1:IP 999:Port 10000:送出逾時 ASCII:編碼格式 6000:重新連線間隔時間(ms) 180000:送出的EchoRequest間隔時間(ms)--><!--
     <Connection BankCode="0808" MessageType="0100+0420" SendSocket="Yes">60.199.64.90:9310:5000:ASCII:6000:180000</Connection>
     <Connection BankCode="0808" MessageType="0302" SendSocket="No">60.199.64.90:9312:5000:ASCII:6000:180000</Connection>
   </Connections>
-  <Connections id="2" mode="Offical" Name="玉山銀">
+  <Connections id="13" mode="Test" Name="玉山銀">
     <Connection BankCode="0808" MessageType="0120" SendSocket="Yes">60.199.64.90:9311:5000:ASCII:6000:180000</Connection>
   </Connections>-->
-  <!--<Connections id="3" mode="Offical" Name="華南銀">
+  <!--<Connections id="14" mode="Test" Name="華南銀">
     <Connection BankCode="0008" MessageType="0100+0420" SendSocket="Yes">172.16.8.70:3114:5000:ASCII:6000:180000</Connection>
     <Connection BankCode="0008" MessageType="0302" SendSocket="No">172.16.8.70:3119:5000:ASCII:6000:180000</Connection>
   </Connections>-->
-  <!--<Connections id="4" mode="Offical" Name="中信銀">
+  <!--<Connections id="15" mode="Test" Name="中信銀">
     <Connection BankCode="0822" MessageType="0100+0420" SendSocket="Yes">172.16.99.3:4600:5000:ASCII:6000:180000</Connection>
     <Connection BankCode="0822" MessageType="0302" SendSocket="No">172.16.99.3:4601:5000:ASCII:6000:180000</Connection>
   </Connections>-->
-  <!--<Connections id="5" mode="Offical" Name="大眾銀">
+  <!--<Connections id="16" mode="Test" Name="大眾銀">
     <Connection BankCode="0814" MessageType="0100+0420" SendSocket="Yes">122.146.214.87:7003:5000:ASCII:6000:180000</Connection>
     <Connection BankCode="0814" MessageType="0302" SendSocket="No">122.146.214.87:7001:5000:ASCII:6000:180000</Connection>
   </Connections>
-  <Connections id="6" mode="Offical" Name="大眾銀">
+  <Connections id="17" mode="Test" Name="大眾銀">
     <Connection BankCode="0814" MessageType="0120" SendSocket="Yes">122.146.214.87:7002:5000:ASCII:6000:180000</Connection>
   </Connections>-->
-  <!--<Connections id="7" mode="Offical" Name="第一銀">
+  <!--<Connections id="18" mode="Test" Name="第一銀">
     <Connection BankCode="0007" MessageType="0100+0420" SendSocket="Yes">172.16.8.1:6900:5000:ASCII:6000:180000</Connection>
     <Connection BankCode="0007" MessageType="0302" SendSocket="No">172.16.8.1:6700:5000:ASCII:6000:180000</Connection>
   </Connections>-->
-  <!--<Connections id="8" mode="Offical" Name="元大銀">
+  <!--<Connections id="19" mode="Test" Name="元大銀">
     <Connection BankCode="0806" MessageType="0100+0420" SendSocket="Yes">172.16.8.112:14500:5000:ASCII:6000:180000</Connection>
     <Connection BankCode="0806" MessageType="0302" SendSocket="No">172.16.8.112:14501:5000:ASCII:6000:180000</Connection>
   </Connections>
-  <Connections id="9" mode="Offical" Name="元大銀">
+  <Connections id="20" mode="Test" Name="元大銀">
     <Connection BankCode="0806" MessageType="0120" SendSocket="Yes">172.16.8.112:14502:5000:ASCII:6000:180000</Connection>
   </Connections>-->
-  <Connections id="10" mode="Offical" Name="富邦銀">
+  <!--<Connections id="21" mode="Test" Name="富邦銀">
     <Connection BankCode="0012" MessageType="0100+0420" SendSocket="Yes">203.74.183.74:4910:5000:ASCII:6000:180000</Connection>
     <Connection BankCode="0012" MessageType="0302" SendSocket="No">203.74.183.74:4710:5000:ASCII:6000:180000</Connection>
-  </Connections>
-  <!--<Connections id="11" mode="Test">
+  </Connections>-->
+  <!--<Connections id="22" mode="Test">
     <Connection BankCode="0808" MessageType="0100+0420" SendSocket="Yes">127.0.0.1:9310:5000:ASCII:6000:5000</Connection>
     <Connection BankCode="0808" MessageType="0120" SendSocket="No">127.0.0.1:9311:5000:ASCII:6000:180000</Connection>
     <Connection BankCode="0808" MessageType="0302" SendSocket="No">127.0.0.1:9312:5000:ASCII:6000:180000</Connection>

@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Services>
   <!--連向AP端的Service 0800為SignOn/Off服務,127.0.0.1為ip, 6105為port, 5000(ms)為送出逾時, 5000(ms)為接收逾時-->
-  <Service name="0800">10.27.68.155:6105:5000:5000</Service>
-  <Service name="0302">10.27.68.155:6109:5000:5000</Service>
+  <Service name="0800">10.69.3.48:6105:5000:5000</Service>
+  <Service name="0302">10.69.3.48:6109:5000:5000</Service>
 </Services>
